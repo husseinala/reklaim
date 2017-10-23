@@ -9,28 +9,28 @@ import android.view.ViewGroup
  */
 
 interface ItemModel {
-
     val layoutId: Int
 }
 
-interface ItemView<in Model: ItemModel> {
-
+interface ItemView<in Model : ItemModel> {
     fun configure(model: Model)
 }
 
 open class ItemsAdapter(
         private val items: Array<ItemModel>,
-        private val itemViewForLayoutId: ((Int) -> View)): RecyclerView.Adapter<ItemsAdapter.ViewHolder>() {
+        private val itemViewForLayoutId: ((Int, View) -> RecyclerView.ViewHolder)): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val itemView = itemViewForLayoutId(viewType)
-        return ViewHolder(itemView)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return itemViewForLayoutId(viewType, parent.loadLayout(viewType))
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val cell = holder.itemView as ItemView<ItemModel>
-        val model = items[position]
-        cell.configure(model)
+    @Suppress("UNCHECKED_CAST")
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        if (holder is ItemView<*>) {
+            val cell = holder as ItemView<ItemModel>
+            val model = items[position]
+            cell.configure(model)
+        }
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -41,5 +41,8 @@ open class ItemsAdapter(
         return items.count()
     }
 
-    inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 }
+
+abstract class BaseViewHolder<in Model : ItemModel>(view: View) : RecyclerView.ViewHolder(view), ItemView<Model>
+
+class EmptyViewHolder(view: View) : RecyclerView.ViewHolder(view)
